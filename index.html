@@ -1,0 +1,1085 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="TRAIN">
+<meta name="theme-color" content="#0a0a0a">
+<meta name="color-scheme" content="dark">
+<title>TRAIN</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@200;300;400;600;700;900&family=Barlow:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0a;
+    --surface: #141414;
+    --surface2: #1e1e1e;
+    --border: #2a2a2a;
+    --accent: #e8ff47;
+    --accent2: #ff4747;
+    --text: #f0f0f0;
+    --muted: #666;
+    --timer-color: #e8ff47;
+    --safe-top: env(safe-area-inset-top, 0px);
+    --safe-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+  html, body {
+    height: 100%; width: 100%;
+    background: var(--bg) !important;
+    color: var(--text);
+    font-family: 'Barlow', sans-serif;
+    overflow: hidden;
+    position: fixed;
+    color-scheme: dark;
+  }
+
+  /* ── SCREENS ── */
+  .screen {
+    position: absolute; inset: 0;
+    display: flex; flex-direction: column;
+    opacity: 0; pointer-events: none;
+    transition: opacity 0.25s;
+    background: var(--bg);
+  }
+  .screen.active { opacity: 1; pointer-events: all; }
+
+  /* ── HEADER ── */
+  .app-header {
+    padding: calc(var(--safe-top) + 16px) 20px 16px;
+    display: flex; align-items: center; justify-content: space-between;
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+  .app-title {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 900; font-size: 28px; letter-spacing: 4px;
+    color: var(--accent);
+  }
+
+  /* ── TABS ── */
+  .tabs {
+    display: flex;
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+  .tab {
+    flex: 1; padding: 14px;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 13px; font-weight: 600; letter-spacing: 2px;
+    text-transform: uppercase; color: var(--muted);
+    background: none; border: none; cursor: pointer;
+    transition: color 0.2s;
+    border-bottom: 2px solid transparent;
+  }
+  .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+  /* ── ROUTINE EDITOR ── */
+  .routine-list {
+    flex: 1; overflow-y: auto;
+    padding: 16px;
+    display: flex; flex-direction: column; gap: 10px;
+  }
+  .exercise-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+    animation: slideIn 0.2s ease;
+  }
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .exercise-card-header {
+    display: flex; align-items: center; padding: 14px 16px; gap: 12px;
+  }
+  .ex-num {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 22px; font-weight: 900; color: var(--accent);
+    width: 28px; flex-shrink: 0;
+  }
+  .ex-name {
+    flex: 1; font-size: 15px; font-weight: 500;
+    background: none; border: none; color: var(--text);
+    font-family: 'Barlow', sans-serif;
+    outline: none;
+  }
+  .ex-name::placeholder { color: var(--muted); }
+  .ex-delete {
+    width: 30px; height: 30px; border-radius: 50%;
+    background: none; border: 1px solid var(--border);
+    color: var(--muted); font-size: 16px; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    transition: background 0.2s, color 0.2s;
+  }
+  .ex-delete:active { background: var(--accent2); color: #fff; border-color: var(--accent2); }
+
+  .exercise-card-meta {
+    display: flex; gap: 0;
+    border-top: 1px solid var(--border);
+  }
+  .meta-field {
+    flex: 1; display: flex; align-items: center; gap: 8px;
+    padding: 10px 14px;
+    border-right: 1px solid var(--border);
+  }
+  .meta-field:last-child { border-right: none; }
+  .meta-label {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 10px; letter-spacing: 1.5px; color: var(--muted);
+    text-transform: uppercase; flex-shrink: 0;
+  }
+  .meta-input {
+    flex: 1; background: none; border: none; color: var(--text);
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 18px; font-weight: 600;
+    width: 100%; outline: none; min-width: 0;
+  }
+  .meta-input::placeholder { color: #3a3a3a; }
+
+  .add-exercise-btn {
+    margin: 0 16px 10px;
+    padding: 14px;
+    background: none; border: 1px dashed var(--border);
+    border-radius: 12px; color: var(--muted);
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 13px; letter-spacing: 2px; text-transform: uppercase;
+    cursor: pointer; width: calc(100% - 32px);
+    transition: border-color 0.2s, color 0.2s;
+  }
+  .add-exercise-btn:active { border-color: var(--accent); color: var(--accent); }
+
+  .start-btn {
+    margin: 0 16px calc(var(--safe-bottom) + 16px);
+    padding: 18px;
+    background: var(--accent); color: #0a0a0a;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 16px; font-weight: 900; letter-spacing: 3px;
+    text-transform: uppercase; border: none; border-radius: 12px;
+    cursor: pointer; flex-shrink: 0;
+    transition: opacity 0.2s;
+  }
+  .start-btn:active { opacity: 0.8; }
+
+  /* ── LIBRARY TAB ── */
+  .library-list {
+    flex: 1; overflow-y: auto;
+    padding: 16px;
+    display: flex; flex-direction: column; gap: 10px;
+  }
+  .lib-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+    animation: slideIn 0.2s ease;
+  }
+  .lib-card-header {
+    display: flex; align-items: center; padding: 14px 16px; gap: 12px;
+  }
+  .lib-name {
+    flex: 1; font-size: 15px; font-weight: 500;
+    background: none; border: none; color: var(--text);
+    font-family: 'Barlow', sans-serif; outline: none;
+  }
+  .lib-name::placeholder { color: var(--muted); }
+  .lib-add-btn {
+    padding: 6px 14px;
+    background: var(--accent); color: #0a0a0a;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 12px; font-weight: 700; letter-spacing: 1.5px;
+    text-transform: uppercase; border: none; border-radius: 6px;
+    cursor: pointer; flex-shrink: 0;
+    transition: opacity 0.15s;
+  }
+  .lib-add-btn:active { opacity: 0.7; }
+  .lib-delete {
+    width: 28px; height: 28px; border-radius: 50%;
+    background: none; border: 1px solid var(--border);
+    color: var(--muted); font-size: 14px; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    transition: background 0.2s, color 0.2s;
+  }
+  .lib-delete:active { background: var(--accent2); color: #fff; border-color: var(--accent2); }
+  .lib-card-meta {
+    display: flex; gap: 0;
+    border-top: 1px solid var(--border);
+  }
+  .lib-add-all-btn {
+    margin: 0 16px calc(var(--safe-bottom) + 16px);
+    padding: 16px;
+    background: none; border: 1px solid var(--border);
+    border-radius: 12px; color: var(--muted);
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 13px; letter-spacing: 2px; text-transform: uppercase;
+    cursor: pointer; width: calc(100% - 32px);
+    transition: border-color 0.2s, color 0.2s; flex-shrink: 0;
+  }
+  .lib-add-all-btn:active { border-color: var(--accent); color: var(--accent); }
+
+  .add-lib-btn {
+    margin: 0 16px 10px;
+    padding: 14px;
+    background: none; border: 1px dashed var(--border);
+    border-radius: 12px; color: var(--muted);
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 13px; letter-spacing: 2px; text-transform: uppercase;
+    cursor: pointer; width: calc(100% - 32px);
+    transition: border-color 0.2s, color 0.2s;
+  }
+  .add-lib-btn:active { border-color: var(--accent); color: var(--accent); }
+
+  .toast {
+    position: fixed; bottom: calc(var(--safe-bottom) + 80px); left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    background: var(--accent); color: #0a0a0a;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 13px; font-weight: 700; letter-spacing: 2px;
+    padding: 10px 20px; border-radius: 20px;
+    opacity: 0; transition: opacity 0.2s, transform 0.2s;
+    pointer-events: none; z-index: 100; white-space: nowrap;
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  /* ── TRAINING SCREEN ── */
+  #training-screen {
+    background: var(--bg);
+    justify-content: flex-end;
+  }
+
+  /* Progress bar top */
+  .progress-bar-wrap {
+    position: absolute; top: 0; left: 0; right: 0;
+    z-index: 10;
+    display: flex; gap: 4px; padding-left: 16px; padding-right: 16px;
+    padding-top: calc(var(--safe-top) + 10px);
+  }
+  .progress-seg {
+    height: 3px; flex: 1; border-radius: 2px;
+    background: rgba(255,255,255,0.15);
+    overflow: hidden;
+  }
+  .progress-seg-fill {
+    height: 100%; width: 0%;
+    background: var(--accent);
+    transition: width 0.1s linear;
+  }
+  .progress-seg.done .progress-seg-fill { width: 100%; }
+
+  /* Stopwatch */
+  #stopwatch {
+    position: absolute;
+    top: calc(var(--safe-top) + 30px);
+    left: 50%; transform: translateX(-50%);
+    z-index: 11;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 13px; font-weight: 300; letter-spacing: 3px;
+    color: rgba(255,255,255,0.35);
+  }
+
+  /* Exercise view */
+  #exercise-view {
+    position: absolute; inset: 0;
+    display: flex; flex-direction: column;
+    justify-content: center; align-items: center;
+    padding: 40px 30px;
+    background: var(--bg);
+    z-index: 5;
+    transition: transform 0.35s cubic-bezier(0.4,0,0.2,1), opacity 0.35s;
+  }
+  #exercise-view.slide-out-left {
+    transform: translateX(-100%); opacity: 0;
+  }
+  #exercise-view.slide-out-right {
+    transform: translateX(100%); opacity: 0;
+  }
+
+  .ex-step-label {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 12px; letter-spacing: 3px; color: var(--muted);
+    text-transform: uppercase; margin-bottom: 24px;
+  }
+  .ex-big-name {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: clamp(42px, 12vw, 72px);
+    font-weight: 600; line-height: 1;
+    text-align: center; letter-spacing: 2px;
+    margin-bottom: 20px;
+  }
+  .ex-big-meta {
+    display: flex; gap: 32px; margin-bottom: 48px;
+  }
+  .ex-meta-item { text-align: center; }
+  .ex-meta-val {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 36px; font-weight: 300; color: var(--accent);
+  }
+  .ex-meta-lbl {
+    font-size: 11px; letter-spacing: 2px; color: var(--muted);
+    text-transform: uppercase;
+  }
+  .swipe-hints {
+    display: flex; gap: 32px; align-items: center;
+  }
+  .swipe-hint {
+    font-size: 12px; letter-spacing: 2px; color: var(--muted);
+    text-transform: uppercase;
+    display: flex; align-items: center; gap: 6px;
+    animation: pulse 2s infinite;
+  }
+  .swipe-hint.dim { opacity: 0.4; animation: none; }
+  @keyframes pulse { 0%,100%{opacity:0.3} 50%{opacity:0.9} }
+  .swipe-arrow { font-size: 16px; }
+
+  /* TIMER VIEW */
+  #timer-view {
+    position: absolute; inset: 0;
+    display: flex; flex-direction: column;
+    overflow: hidden;
+    z-index: 5;
+  }
+
+  .timer-fill-wrap {
+    position: absolute; inset: 0;
+    display: flex; flex-direction: column; justify-content: flex-end;
+  }
+  .timer-fill {
+    width: 100%;
+    background: var(--timer-color);
+    transition: height 0.1s linear;
+    transform-origin: bottom;
+  }
+
+  /* Two stacked content layers for split-color text effect */
+  .timer-content {
+    position: absolute; inset: 0;
+    display: flex; flex-direction: column;
+    justify-content: center; align-items: center;
+    z-index: 2;
+    pointer-events: none;
+  }
+  .timer-content.white-layer { color: #fff; }
+  .timer-content.dark-layer  { color: #0a0a0a; }
+
+  .timer-label {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 13px; letter-spacing: 4px; text-transform: uppercase;
+    margin-bottom: 8px; font-weight: 300;
+  }
+  .timer-number {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: clamp(100px, 35vw, 160px);
+    font-weight: 500; line-height: 1;
+    transition: transform 0.1s;
+  }
+  .timer-number.tick { transform: scale(1.04); }
+  .timer-next {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 14px; letter-spacing: 3px; text-transform: uppercase;
+    font-weight: 300;
+    opacity: 0.6; margin-top: 8px;
+  }
+
+  .timer-tap-area {
+    position: absolute; inset: 0; z-index: 15;
+    cursor: pointer;
+  }
+  .timer-swipe-hint {
+    position: absolute; bottom: calc(var(--safe-bottom) + 24px); left: 0; right: 0;
+    z-index: 16; text-align: center;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 11px; letter-spacing: 2px; text-transform: uppercase;
+    color: rgba(255,255,255,0.2);
+    pointer-events: none;
+  }
+
+  /* DONE VIEW */
+  #done-view {
+    position: absolute; inset: 0;
+    display: flex; flex-direction: column;
+    justify-content: center; align-items: center;
+    background: var(--bg); z-index: 20;
+    opacity: 0; pointer-events: none;
+    transition: opacity 0.4s;
+  }
+  #done-view.active { opacity: 1; pointer-events: all; }
+  .done-emoji { font-size: 64px; margin-bottom: 24px; }
+  .done-title {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 52px; font-weight: 900; letter-spacing: 4px;
+    color: var(--accent); margin-bottom: 4px;
+  }
+  .done-time {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 22px; font-weight: 300; letter-spacing: 4px;
+    color: var(--muted); margin-bottom: 12px;
+  }
+  .done-sub {
+    color: var(--muted); letter-spacing: 2px; font-size: 13px;
+    text-transform: uppercase; margin-bottom: 48px;
+  }
+  .done-btn {
+    padding: 16px 40px;
+    background: var(--accent); color: #0a0a0a;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 15px; font-weight: 900; letter-spacing: 3px;
+    text-transform: uppercase; border: none; border-radius: 10px;
+    cursor: pointer;
+  }
+
+  /* Close training btn */
+  .close-training {
+    position: absolute;
+    top: calc(var(--safe-top) + 34px);
+    right: 16px;
+    z-index: 20;
+    width: 36px; height: 36px; border-radius: 50%;
+    background: rgba(255,255,255,0.08);
+    border: none; color: rgba(255,255,255,0.5); font-size: 16px;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
+  }
+
+  /* Touch swipe area on exercise */
+  .swipe-area {
+    position: absolute; inset: 0; z-index: 6;
+  }
+
+  /* ── EMPTY STATE ── */
+  .empty-state {
+    flex: 1; display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    color: var(--muted); gap: 12px; padding: 40px;
+    text-align: center;
+  }
+  .empty-icon { font-size: 48px; opacity: 0.3; }
+  .empty-text {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 18px; letter-spacing: 2px; text-transform: uppercase;
+  }
+  .empty-sub { font-size: 13px; }
+
+  /* ── SCROLLBAR ── */
+  .routine-list::-webkit-scrollbar,
+  .library-list::-webkit-scrollbar { width: 4px; }
+  .routine-list::-webkit-scrollbar-track,
+  .library-list::-webkit-scrollbar-track { background: transparent; }
+  .routine-list::-webkit-scrollbar-thumb,
+  .library-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+</style>
+</head>
+<body>
+
+<!-- ══════════════ ROUTINE SCREEN ══════════════ -->
+<div id="routine-screen" class="screen active">
+  <div class="app-header">
+    <span class="app-title">TRAIN</span>
+  </div>
+  <div class="tabs">
+    <button class="tab active" onclick="showTab('routine')">Entrenamiento</button>
+    <button class="tab" onclick="showTab('library')">Ejercicios</button>
+  </div>
+
+  <!-- Routine tab -->
+  <div id="tab-routine" style="display:flex;flex-direction:column;flex:1;overflow:hidden;">
+    <div class="routine-list" id="exercise-list"></div>
+    <button class="add-exercise-btn" onclick="addExercise()">+ Añadir ejercicio</button>
+    <button class="start-btn" onclick="startTraining()">▶ EMPEZAR ENTRENAMIENTO</button>
+  </div>
+
+  <!-- Library tab -->
+  <div id="tab-library" style="display:none;flex-direction:column;flex:1;overflow:hidden;">
+    <div class="library-list" id="library-list"></div>
+    <button class="add-lib-btn" onclick="addLibExercise()" style="margin-left:16px;margin-right:16px;margin-bottom:10px;">+ Nuevo ejercicio en biblioteca</button>
+    <button class="lib-add-all-btn" onclick="addAllToTraining()">↑ Añadir todos al entrenamiento</button>
+  </div>
+</div>
+
+<!-- ══════════════ TRAINING SCREEN ══════════════ -->
+<div id="training-screen" class="screen">
+
+  <div class="progress-bar-wrap" id="progress-bar"></div>
+  <div id="stopwatch">00:00</div>
+  <button class="close-training" onclick="stopTraining()">✕</button>
+
+  <!-- EXERCISE VIEW -->
+  <div id="exercise-view">
+    <div class="ex-step-label" id="ex-step-label">EJERCICIO 1 / 5</div>
+    <div class="ex-big-name" id="ex-big-name">FONDOS</div>
+    <div class="ex-big-meta" id="ex-big-meta"></div>
+    <div class="swipe-hints">
+      <div class="swipe-hint dim"><span class="swipe-arrow">→</span> SALTAR</div>
+      <div class="swipe-hint"><span class="swipe-arrow">←</span> EMPEZAR</div>
+    </div>
+    <div class="swipe-area" id="swipe-area"></div>
+  </div>
+
+  <!-- TIMER VIEW -->
+  <div id="timer-view" style="display:none;">
+    <div class="timer-fill-wrap">
+      <div class="timer-fill" id="timer-fill" style="height:100%;"></div>
+    </div>
+    <div class="timer-content white-layer" id="timer-content-white">
+      <div class="timer-label" id="timer-label">DESCANSO</div>
+      <div class="timer-number" id="timer-number">30</div>
+      <div class="timer-next" id="timer-next"></div>
+    </div>
+    <div class="timer-content dark-layer" id="timer-content-dark">
+      <div class="timer-label" id="timer-label-dark">DESCANSO</div>
+      <div class="timer-number" id="timer-number-dark">30</div>
+      <div class="timer-next" id="timer-next-dark"></div>
+    </div>
+    <div class="timer-tap-area" id="timer-tap-area"></div>
+    <div class="timer-swipe-hint">← desliza para saltar descanso</div>
+  </div>
+
+  <!-- DONE VIEW -->
+  <div id="done-view">
+    <div class="done-emoji">🔥</div>
+    <div class="done-title">LISTO</div>
+    <div class="done-time" id="done-time">00:00</div>
+    <div class="done-sub">Entrenamiento completado</div>
+    <button class="done-btn" onclick="stopTraining()">VOLVER</button>
+  </div>
+
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ──────────────────────────────────────────────
+// DATA
+// ──────────────────────────────────────────────
+let exercises = JSON.parse(localStorage.getItem('train_exercises') || '[]');
+let library   = JSON.parse(localStorage.getItem('train_library')   || '[]');
+
+if (!exercises.length) {
+  exercises = [
+    { id: uid(), name: 'Fondos', reps: '12', series: '3', rest: '60' },
+    { id: uid(), name: 'Dominadas', reps: '8', series: '3', rest: '90' },
+    { id: uid(), name: 'Sentadillas', reps: '15', series: '3', rest: '60' },
+  ];
+  saveExercises();
+}
+if (!library.length) {
+  library = [
+    { id: uid(), name: 'Australian Pull-ups', reps: '12', series: '3', rest: '60' },
+    { id: uid(), name: 'Dips', reps: '10', series: '3', rest: '60' },
+  ];
+  saveLibrary();
+}
+
+function uid() { return Math.random().toString(36).slice(2); }
+function saveExercises() { localStorage.setItem('train_exercises', JSON.stringify(exercises)); }
+function saveLibrary()   { localStorage.setItem('train_library',   JSON.stringify(library)); }
+
+// ──────────────────────────────────────────────
+// TABS
+// ──────────────────────────────────────────────
+function showTab(tab) {
+  document.querySelectorAll('.tab').forEach((t,i) => {
+    t.classList.toggle('active', (tab === 'routine' && i === 0) || (tab === 'library' && i === 1));
+  });
+  document.getElementById('tab-routine').style.display  = tab === 'routine'  ? 'flex' : 'none';
+  document.getElementById('tab-library').style.display  = tab === 'library'  ? 'flex' : 'none';
+}
+
+// ──────────────────────────────────────────────
+// RENDER ROUTINE
+// ──────────────────────────────────────────────
+function render() {
+  const list = document.getElementById('exercise-list');
+  if (!exercises.length) {
+    list.innerHTML = `<div class="empty-state">
+      <div class="empty-icon">💪</div>
+      <div class="empty-text">Sin ejercicios</div>
+      <div class="empty-sub">Añade tu primer ejercicio</div>
+    </div>`;
+    return;
+  }
+  list.innerHTML = exercises.map((ex, i) => `
+    <div class="exercise-card" data-id="${ex.id}">
+      <div class="exercise-card-header">
+        <div class="ex-num">${i+1}</div>
+        <input class="ex-name" value="${escHtml(ex.name)}" placeholder="Nombre del ejercicio"
+          oninput="updateField(exercises,'${ex.id}','name',this.value,saveExercises)">
+        <button class="ex-delete" onclick="deleteExercise('${ex.id}')">✕</button>
+      </div>
+      <div class="exercise-card-meta">
+        <div class="meta-field">
+          <span class="meta-label">Reps</span>
+          <input class="meta-input" value="${escHtml(ex.reps)}" placeholder="—"
+            oninput="updateField(exercises,'${ex.id}','reps',this.value,saveExercises)">
+        </div>
+        <div class="meta-field">
+          <span class="meta-label">Series</span>
+          <input class="meta-input" value="${escHtml(ex.series)}" placeholder="—"
+            oninput="updateField(exercises,'${ex.id}','series',this.value,saveExercises)">
+        </div>
+        <div class="meta-field">
+          <span class="meta-label">Descanso</span>
+          <input class="meta-input" value="${escHtml(ex.rest)}" placeholder="seg"
+            oninput="updateField(exercises,'${ex.id}','rest',this.value,saveExercises)">
+          <span style="font-size:11px;color:var(--muted)">s</span>
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function addExercise() {
+  exercises.push({ id: uid(), name: '', reps: '', series: '', rest: '60' });
+  saveExercises(); render();
+  const list = document.getElementById('exercise-list');
+  list.scrollTop = list.scrollHeight;
+  setTimeout(() => {
+    const inputs = list.querySelectorAll('.ex-name');
+    inputs[inputs.length - 1]?.focus();
+  }, 50);
+}
+
+function deleteExercise(id) {
+  exercises = exercises.filter(e => e.id !== id);
+  saveExercises(); render();
+}
+
+function updateField(arr, id, field, val, saveFn) {
+  const ex = arr.find(e => e.id === id);
+  if (ex) { ex[field] = val; saveFn(); }
+}
+
+function escHtml(s) {
+  return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+render();
+
+// ──────────────────────────────────────────────
+// RENDER LIBRARY
+// ──────────────────────────────────────────────
+function renderLibrary() {
+  const list = document.getElementById('library-list');
+  if (!library.length) {
+    list.innerHTML = `<div class="empty-state">
+      <div class="empty-icon">📋</div>
+      <div class="empty-text">Biblioteca vacía</div>
+      <div class="empty-sub">Añade ejercicios para reutilizarlos</div>
+    </div>`;
+    return;
+  }
+  list.innerHTML = library.map((ex) => `
+    <div class="lib-card" data-id="${ex.id}">
+      <div class="lib-card-header">
+        <input class="lib-name" value="${escHtml(ex.name)}" placeholder="Nombre del ejercicio"
+          oninput="updateField(library,'${ex.id}','name',this.value,saveLibrary)">
+        <button class="lib-add-btn" onclick="addToTraining('${ex.id}')">+ Añadir</button>
+        <button class="lib-delete" onclick="deleteLibExercise('${ex.id}')">✕</button>
+      </div>
+      <div class="lib-card-meta">
+        <div class="meta-field">
+          <span class="meta-label">Reps</span>
+          <input class="meta-input" value="${escHtml(ex.reps)}" placeholder="—"
+            oninput="updateField(library,'${ex.id}','reps',this.value,saveLibrary)">
+        </div>
+        <div class="meta-field">
+          <span class="meta-label">Series</span>
+          <input class="meta-input" value="${escHtml(ex.series)}" placeholder="—"
+            oninput="updateField(library,'${ex.id}','series',this.value,saveLibrary)">
+        </div>
+        <div class="meta-field">
+          <span class="meta-label">Descanso</span>
+          <input class="meta-input" value="${escHtml(ex.rest)}" placeholder="seg"
+            oninput="updateField(library,'${ex.id}','rest',this.value,saveLibrary)">
+          <span style="font-size:11px;color:var(--muted)">s</span>
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function addLibExercise() {
+  library.push({ id: uid(), name: '', reps: '', series: '', rest: '60' });
+  saveLibrary(); renderLibrary();
+  const list = document.getElementById('library-list');
+  list.scrollTop = list.scrollHeight;
+  setTimeout(() => {
+    const inputs = list.querySelectorAll('.lib-name');
+    inputs[inputs.length - 1]?.focus();
+  }, 50);
+}
+
+function deleteLibExercise(id) {
+  library = library.filter(e => e.id !== id);
+  saveLibrary(); renderLibrary();
+}
+
+function addToTraining(id) {
+  const ex = library.find(e => e.id === id);
+  if (!ex) return;
+  exercises.push({ id: uid(), name: ex.name, reps: ex.reps, series: ex.series, rest: ex.rest });
+  saveExercises(); render();
+  showToast(`"${ex.name}" añadido al entrenamiento`);
+}
+
+function addAllToTraining() {
+  if (!library.length) return;
+  library.forEach(ex => {
+    exercises.push({ id: uid(), name: ex.name, reps: ex.reps, series: ex.series, rest: ex.rest });
+  });
+  saveExercises(); render();
+  showToast('Todos añadidos al entrenamiento');
+  showTab('routine');
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2000);
+}
+
+renderLibrary();
+
+// ──────────────────────────────────────────────
+// TRAINING MODE
+// ──────────────────────────────────────────────
+let trainingExercises = [];
+let currentIdx = 0;
+let currentSerie = 1;
+let timerInterval = null;
+let timerSeconds = 0;
+let totalTimerSeconds = 0;
+let trainingPhase = 'exercise';
+let audioCtx = null;
+
+// Stopwatch
+let stopwatchInterval = null;
+let stopwatchSeconds = 0;
+
+function startStopwatch() {
+  stopwatchSeconds = 0;
+  updateStopwatchDisplay();
+  stopwatchInterval = setInterval(() => {
+    stopwatchSeconds++;
+    updateStopwatchDisplay();
+  }, 1000);
+}
+function stopStopwatch() {
+  if (stopwatchInterval) { clearInterval(stopwatchInterval); stopwatchInterval = null; }
+}
+function updateStopwatchDisplay() {
+  const m = String(Math.floor(stopwatchSeconds / 60)).padStart(2,'0');
+  const s = String(stopwatchSeconds % 60).padStart(2,'0');
+  document.getElementById('stopwatch').textContent = m + ':' + s;
+}
+
+function getAudioCtx() {
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  // Resume if suspended (iOS requirement)
+  if (audioCtx.state === 'suspended') audioCtx.resume();
+  return audioCtx;
+}
+
+function beep(freq, duration, vol) {
+  try {
+    const ctx = getAudioCtx();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain); gain.connect(ctx.destination);
+    osc.type = 'sine';
+    osc.frequency.value = freq;
+    gain.gain.setValueAtTime(vol, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration);
+    osc.start(ctx.currentTime);
+    osc.stop(ctx.currentTime + duration + 0.01);
+  } catch(e) { console.warn('beep error', e); }
+}
+
+// Single alert beep at 10s — louder
+function beepAlert() {
+  beep(1000, 0.12, 0.9);
+}
+
+// Countdown: 3 quick beeps at 3,2,1 — loud
+function beepCountdown() {
+  beep(800, 0.10, 1.0);
+}
+
+// Final long beep when timer ends
+function beepFinal() {
+  beep(1200, 0.40, 1.0);
+  setTimeout(() => beep(1200, 0.25, 0.7), 450);
+}
+
+function startTraining() {
+  trainingExercises = exercises.filter(e => e.name.trim());
+  if (!trainingExercises.length) {
+    alert('Añade al menos un ejercicio con nombre.');
+    return;
+  }
+  currentIdx = 0;
+  currentSerie = 1;
+  trainingPhase = 'exercise';
+
+  // Init audio context on this user gesture
+  try { getAudioCtx(); } catch(e) {}
+
+  document.getElementById('routine-screen').classList.remove('active');
+  document.getElementById('training-screen').classList.add('active');
+
+  buildProgressBar();
+  startStopwatch();
+  showExercise();
+}
+
+function buildProgressBar() {
+  const total = trainingExercises.reduce((s, ex) => s + (parseInt(ex.series) || 1), 0);
+  let html = '';
+  for (let i = 0; i < total; i++) html += `<div class="progress-seg" id="seg-${i}"><div class="progress-seg-fill" id="seg-fill-${i}"></div></div>`;
+  document.getElementById('progress-bar').innerHTML = html;
+}
+
+function getSegmentIndex() {
+  let idx = 0;
+  for (let i = 0; i < currentIdx; i++) idx += (parseInt(trainingExercises[i].series) || 1);
+  idx += (currentSerie - 1);
+  return idx;
+}
+
+function showExercise() {
+  clearTimerInterval();
+  trainingPhase = 'exercise';
+
+  document.getElementById('timer-view').style.display = 'none';
+  document.getElementById('exercise-view').style.display = 'flex';
+  document.getElementById('exercise-view').classList.remove('slide-out-left');
+  document.getElementById('exercise-view').classList.remove('slide-out-right');
+
+  const ex = trainingExercises[currentIdx];
+  const totalSeries = parseInt(ex.series) || 1;
+
+  document.getElementById('ex-step-label').textContent =
+    `EJERCICIO ${currentIdx + 1} / ${trainingExercises.length}  ·  SERIE ${currentSerie} / ${totalSeries}`;
+  document.getElementById('ex-big-name').textContent = ex.name.toUpperCase();
+
+  const meta = document.getElementById('ex-big-meta');
+  let metaHtml = '';
+  if (ex.reps)   metaHtml += `<div class="ex-meta-item"><div class="ex-meta-val">${ex.reps}</div><div class="ex-meta-lbl">REPS</div></div>`;
+  if (ex.series) metaHtml += `<div class="ex-meta-item"><div class="ex-meta-val">${ex.series}</div><div class="ex-meta-lbl">SERIES</div></div>`;
+  meta.innerHTML = metaHtml;
+
+  setupSwipe();
+}
+
+function setupSwipe() {
+  const area = document.getElementById('swipe-area');
+  let startX = null;
+  area.ontouchstart = e => { startX = e.touches[0].clientX; };
+  area.ontouchend = e => {
+    if (startX === null) return;
+    const dx = e.changedTouches[0].clientX - startX;
+    if (dx < -40) { triggerSlide('left'); }
+    else if (dx > 40) { skipExercise(); }
+    startX = null;
+  };
+  area.onclick = () => triggerSlide('left');
+}
+
+function triggerSlide(dir) {
+  try { getAudioCtx(); } catch(e) {}
+  const view = document.getElementById('exercise-view');
+  view.classList.add(dir === 'left' ? 'slide-out-left' : 'slide-out-right');
+  setTimeout(() => {
+    view.style.display = 'none';
+    startTimer();
+  }, 320);
+}
+
+function skipExercise() {
+  // swipe right on exercise card = skip to next without timer
+  const view = document.getElementById('exercise-view');
+  view.classList.add('slide-out-right');
+  setTimeout(() => {
+    view.style.display = 'none';
+    advanceSkip();
+  }, 320);
+}
+
+function setupTimerSwipe() {
+  const area = document.getElementById('timer-tap-area');
+  let startX = null;
+  area.ontouchstart = e => { startX = e.touches[0].clientX; };
+  area.ontouchend = e => {
+    if (startX === null) return;
+    const dx = e.changedTouches[0].clientX - startX;
+    if (Math.abs(dx) < 10) { /* tap — do nothing */ }
+    else if (dx < -40) { finishTimer(); } // swipe left = skip rest
+    startX = null;
+  };
+  area.onclick = () => {}; // tap does nothing (accidental tap protection)
+}
+
+function startTimer() {
+  const ex = trainingExercises[currentIdx];
+  trainingPhase = 'timer';
+
+  document.getElementById('timer-view').style.display = 'flex';
+  document.getElementById('timer-fill').style.background = 'var(--timer-color)';
+
+  const restSec = parseInt(ex.rest) || 60;
+  timerSeconds = restSec;
+  totalTimerSeconds = restSec;
+
+  updateTimerDisplay();
+  updateTimerFill();
+
+  const segIdx = getSegmentIndex();
+  const fillEl = document.getElementById(`seg-fill-${segIdx}`);
+  if (fillEl) {
+    fillEl.style.transition = `width ${restSec}s linear`;
+    requestAnimationFrame(() => { fillEl.style.width = '100%'; });
+  }
+
+  const nextLabel = getNextLabel();
+  document.getElementById('timer-label').textContent = 'DESCANSO';
+  document.getElementById('timer-label-dark').textContent = 'DESCANSO';
+  document.getElementById('timer-next').textContent = nextLabel;
+  document.getElementById('timer-next-dark').textContent = nextLabel;
+
+  setupTimerSwipe();
+
+  timerInterval = setInterval(() => {
+    timerSeconds--;
+    if (timerSeconds <= 0) {
+      timerSeconds = 0;
+      updateTimerDisplay();
+      updateTimerFill();
+      clearTimerInterval();
+      beepFinal();
+      setTimeout(() => finishTimer(), 400);
+      return;
+    }
+    updateTimerDisplay();
+    updateTimerFill();
+
+    if (timerSeconds === 10) beepAlert();
+    if (timerSeconds === 3) beepCountdown();
+    if (timerSeconds === 2) beepCountdown();
+    if (timerSeconds === 1) beepCountdown();
+
+    if (timerSeconds <= 3) {
+      document.getElementById('timer-fill').style.background = 'var(--accent2)';
+    }
+  }, 1000);
+}
+
+function syncDarkLayer() {
+  const pct = totalTimerSeconds > 0 ? (timerSeconds / totalTimerSeconds) * 100 : 0;
+  const topClip = (100 - pct).toFixed(2);
+  document.getElementById('timer-content-dark').style.clipPath = `inset(${topClip}% 0 0 0)`;
+}
+
+function updateTimerDisplay() {
+  document.getElementById('timer-number').textContent = timerSeconds;
+  document.getElementById('timer-number-dark').textContent = timerSeconds;
+  const el = document.getElementById('timer-number');
+  el.classList.remove('tick');
+  requestAnimationFrame(() => el.classList.add('tick'));
+  setTimeout(() => el.classList.remove('tick'), 120);
+}
+
+function updateTimerFill() {
+  const pct = totalTimerSeconds > 0 ? (timerSeconds / totalTimerSeconds) * 100 : 0;
+  document.getElementById('timer-fill').style.height = pct + '%';
+  if (timerSeconds > 3) document.getElementById('timer-fill').style.background = 'var(--timer-color)';
+  syncDarkLayer();
+}
+
+function clearTimerInterval() {
+  if (timerInterval) { clearInterval(timerInterval); timerInterval = null; }
+}
+
+function finishTimer() {
+  clearTimerInterval();
+  const segIdx = getSegmentIndex();
+  document.getElementById(`seg-${segIdx}`)?.classList.add('done');
+  advance();
+}
+
+function advance() {
+  const ex = trainingExercises[currentIdx];
+  const totalSeries = parseInt(ex.series) || 1;
+
+  if (currentSerie < totalSeries) {
+    currentSerie++;
+    document.getElementById('timer-view').style.display = 'none';
+    showExercise();
+  } else if (currentIdx < trainingExercises.length - 1) {
+    currentIdx++;
+    currentSerie = 1;
+    document.getElementById('timer-view').style.display = 'none';
+    showExercise();
+  } else {
+    finishWorkout();
+  }
+}
+
+function advanceSkip() {
+  // Skip without marking segment done
+  const ex = trainingExercises[currentIdx];
+  const totalSeries = parseInt(ex.series) || 1;
+  if (currentSerie < totalSeries) {
+    currentSerie++;
+    showExercise();
+  } else if (currentIdx < trainingExercises.length - 1) {
+    currentIdx++;
+    currentSerie = 1;
+    showExercise();
+  } else {
+    finishWorkout();
+  }
+}
+
+function finishWorkout() {
+  stopStopwatch();
+  document.getElementById('timer-view').style.display = 'none';
+  document.getElementById('exercise-view').style.display = 'none';
+  const m = String(Math.floor(stopwatchSeconds / 60)).padStart(2,'0');
+  const s = String(stopwatchSeconds % 60).padStart(2,'0');
+  document.getElementById('done-time').textContent = m + ':' + s;
+  document.getElementById('done-view').classList.add('active');
+  beepFinal();
+}
+
+function getNextLabel() {
+  const ex = trainingExercises[currentIdx];
+  const totalSeries = parseInt(ex.series) || 1;
+  if (currentSerie < totalSeries) return `SERIE ${currentSerie + 1} · ${ex.name.toUpperCase()}`;
+  if (currentIdx < trainingExercises.length - 1) return trainingExercises[currentIdx + 1].name.toUpperCase();
+  return 'ÚLTIMO';
+}
+
+function stopTraining() {
+  clearTimerInterval();
+  stopStopwatch();
+  document.getElementById('training-screen').classList.remove('active');
+  document.getElementById('routine-screen').classList.add('active');
+  document.getElementById('done-view').classList.remove('active');
+  document.getElementById('timer-view').style.display = 'none';
+  document.getElementById('exercise-view').style.display = 'flex';
+  document.getElementById('exercise-view').classList.remove('slide-out-left');
+  document.getElementById('exercise-view').classList.remove('slide-out-right');
+  document.getElementById('timer-fill').style.background = 'var(--timer-color)';
+  document.getElementById('timer-content-dark').style.clipPath = 'inset(100% 0 0 0)';
+}
+</script>
+</body>
+</html>
